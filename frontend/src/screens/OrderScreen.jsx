@@ -168,7 +168,7 @@ const OrderScreen = () => {
                           </Link>
                         </Col>
                         <Col md={4}>
-                          {item.qty} x R$ {item.price} = R$ {item.qty * item.price}
+                          {item.qty} x R$ {item.price} = R$ {item.qty * item.price.toFixed(2)}
                         </Col>
                       </Row>
                     </ListGroup.Item>
@@ -187,13 +187,13 @@ const OrderScreen = () => {
               <ListGroup.Item>
                 <Row>
                   <Col>Itens</Col>
-                  <Col>R$ {order.itemsPrice}</Col>
+                  <Col>R$ {order.itemsPrice.toFixed(2)}</Col>
                 </Row>
               </ListGroup.Item>
               <ListGroup.Item>
                 <Row>
                   <Col>Envio</Col>
-                  <Col>R$ {order.shippingPrice}</Col>
+                  <Col>R$ {order.shippingPrice.toFixed(2)}</Col>
                 </Row>
               </ListGroup.Item>
               <ListGroup.Item>
@@ -201,9 +201,10 @@ const OrderScreen = () => {
               <ListGroup.Item>
                 <Row>
                   <Col>Total</Col>
-                  <Col>R$ {order.totalPrice}</Col>
+                  <Col>R$ {order.totalPrice.toFixed(2)}</Col>
                 </Row>
               </ListGroup.Item>
+
               {!order.isPaid && (
                 <ListGroup.Item>
                   {loadingPay && <Loader />}
