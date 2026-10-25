@@ -52,9 +52,11 @@ Usuários de exemplo (criados pelo `data:import`): `admin@email.com`, `john@emai
 O projeto já vem configurado (`vercel.json` e `api/index.js`):
 
 1. Importe o repositório em https://vercel.com/new (deixe as configurações padrão).
-2. Em **Environment Variables**, cadastre `MONGO_URI`, `JWT_SECRET`, `PAYPAL_CLIENT_ID`, `PAGINATION_LIMIT` e `NODE_ENV=production`.
-3. No MongoDB Atlas, em **Network Access**, libere o acesso de qualquer IP (`0.0.0.0/0`), pois a Vercel não tem IP fixo.
+2. Crie o banco em **Storage → MongoDB Atlas** (a Vercel cria a variável `MONGODB_URI`) ou informe a sua própria `MONGO_URI`. Se usar uma conta Atlas própria, libere o IP `0.0.0.0/0` em **Network Access**, pois a Vercel não tem IP fixo.
+3. Em **Environment Variables**, cadastre `JWT_SECRET`, `PAYPAL_CLIENT_ID`, `PAGINATION_LIMIT`, `NODE_ENV=production`, `ADMIN_EMAIL` e `ADMIN_PASSWORD`.
 4. Clique em **Deploy**.
+
+Com o banco vazio, o primeiro acesso cria automaticamente o administrador (com `ADMIN_EMAIL`/`ADMIN_PASSWORD`) e os produtos de exemplo.
 
 As imagens enviadas pelo painel admin ficam guardadas no próprio MongoDB (a Vercel não tem disco permanente). Imagens antigas da pasta `uploads/` são copiadas para o site durante o build.
 

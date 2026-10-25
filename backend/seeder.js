@@ -9,6 +9,8 @@ import Order from './models/orderModel.js'
 import connectDB from './config/db.js'
 
 dotenv.config()
+// O seeder manual cuida dos dados sozinho: desliga o seed automático
+process.env.SKIP_AUTO_SEED = '1'
 
 connectDB()
 
