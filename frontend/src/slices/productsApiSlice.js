@@ -11,13 +11,14 @@ export const productsApiSlice = apiSlice.injectEndpoints({
           pageNumber,
         },
       }),
-      providesTags: ['Products'],
+      providesTags: ['Product'],
       keepUnusedDataFor: 5,
     }),
     getProductDetails: builder.query({
       query: productId => ({
         url: `${PRODUCTS_URL}/${productId}`
       }),
+      providesTags: ['Product'],
       keepUnusedDataFor: 5
     }),
     createProduct: builder.mutation({
@@ -47,6 +48,7 @@ export const productsApiSlice = apiSlice.injectEndpoints({
         url: `${PRODUCTS_URL}/${productId}`,
         method: 'DELETE',
       }),
+      invalidatesTags: ['Product'],
     }),
     createReview: builder.mutation({
       query: (data) => ({
@@ -60,6 +62,7 @@ export const productsApiSlice = apiSlice.injectEndpoints({
       query: () => ({
         url: `${PRODUCTS_URL}/top`,
       }),
+      providesTags: ['Product'],
       keepUnusedDataFor: 5,
     }),
   }),

@@ -10,6 +10,7 @@ import {
   useGetUserDetailsQuery,
   useUpdateUserMutation,
 } from '../../slices/usersApiSlice';
+import { getErrorMessage } from '../../utils/format';
 
 const UserEditScreen = () => {
   const { id: userId } = useParams();
@@ -33,12 +34,12 @@ const UserEditScreen = () => {
   const submitHandler = async (e) => {
     e.preventDefault();
     try {
-      await updateUser({ userId, name, email, isAdmin });
-      toast.success('user updated successfully');
+      await updateUser({ userId, name, email, isAdmin }).unwrap();
+      toast.success('Usuário atualizado');
       refetch();
       navigate('/admin/userlist');
     } catch (err) {
-      toast.error(err?.data?.message || err.error);
+      toast.error(getErrorMessage(err));
     }
   };
 
@@ -56,21 +57,19 @@ const UserEditScreen = () => {
         Voltar
       </Link>
       <FormContainer>
-        <h1>Editar Usuários</h1>
+        <h1>Editar usuário</h1>
         {loadingUpdate && <Loader />}
 
         {isLoading ? (
           <Loader />
         ) : error ? (
-          <Message variant='danger'>
-            {error?.data?.message || error.error}
-          </Message>
+          <Message variant='danger'>{getErrorMessage(error)}</Message>
         ) : (
           <Form onSubmit={submitHandler}>
             <Form.Group className='my-2' controlId='name'>
               <Form.Label>Nome</Form.Label>
               <Form.Control
-                type='name'
+                type='text'
                 placeholder='Nome'
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -90,7 +89,7 @@ const UserEditScreen = () => {
             <Form.Group className='my-2' controlId='isadmin'>
               <Form.Check
                 type='checkbox'
-                label='Is Admin'
+                label='Administrador'
                 checked={isAdmin}
                 onChange={(e) => setIsAdmin(e.target.checked)}
               ></Form.Check>

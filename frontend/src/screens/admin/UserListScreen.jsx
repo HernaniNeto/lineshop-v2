@@ -8,6 +8,7 @@ import {
   useGetUsersQuery,
 } from '../../slices/usersApiSlice';
 import { toast } from 'react-toastify';
+import { getErrorMessage } from '../../utils/format';
 
 const UserListScreen = () => {
   const { data: users, refetch, isLoading, error } = useGetUsersQuery();
@@ -15,13 +16,15 @@ const UserListScreen = () => {
   const [deleteUser, { isLoading: loadingDelete }] = useDeleteUserMutation();
 
   const deleteHandler = async (id) => {
-    if (window.confirm('Are you sure')) {
+    if (window.confirm('Tem certeza que deseja apagar este usuário?')) {
       try {
-        await deleteUser(id);
-        toast.success('User deleted')
+        // CORREÇÃO: sem .unwrap(), ao tentar apagar um admin aparecia
+        // "usuário apagado" mesmo o servidor recusando
+        await deleteUser(id).unwrap();
+        toast.success('Usuário apagado');
         refetch();
       } catch (err) {
-        toast.error(err?.data?.message || err.error);
+        toast.error(getErrorMessage(err));
       }
     }
   };
@@ -33,9 +36,7 @@ const UserListScreen = () => {
       {isLoading ? (
         <Loader />
       ) : error ? (
-        <Message variant='danger'>
-          {error?.data?.message || error.error}
-        </Message>
+        <Message variant='danger'>{getErrorMessage(error)}</Message>
       ) : (
         <Table striped bordered hover responsive className='table-sm'>
           <thead>
@@ -63,7 +64,6 @@ const UserListScreen = () => {
                   )}
                 </td>
                 <td>
-                  {/* Remova a condição !user.isAdmin para mostrar os botões de edição e remoção para todos */}
                   <>
                     <LinkContainer
                       to={`/admin/user/${user._id}/edit`}
@@ -73,13 +73,16 @@ const UserListScreen = () => {
                         <FaEdit />
                       </Button>
                     </LinkContainer>
-                    <Button
-                      variant='danger'
-                      className='btn-sm'
-                      onClick={() => deleteHandler(user._id)}
-                    >
-                      <FaTrash style={{ color: 'white' }} />
-                    </Button>
+                    {/* O servidor não permite apagar administradores */}
+                    {!user.isAdmin && (
+                      <Button
+                        variant='danger'
+                        className='btn-sm'
+                        onClick={() => deleteHandler(user._id)}
+                      >
+                        <FaTrash style={{ color: 'white' }} />
+                      </Button>
+                    )}
                   </>
                 </td>
               </tr>

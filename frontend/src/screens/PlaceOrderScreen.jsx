@@ -8,6 +8,7 @@ import CheckoutSteps from '../components/CheckoutSteps';
 import Loader from '../components/Loader';
 import { useCreateOrderMutation } from '../slices/ordersApiSlice';
 import { clearCartItems } from '../slices/cartSlice';
+import { formatPrice, getErrorMessage } from '../utils/format';
 
 const PlaceOrderScreen = () => {
   const navigate = useNavigate();
@@ -38,7 +39,8 @@ const PlaceOrderScreen = () => {
       dispatch(clearCartItems());
       navigate(`/order/${res._id}`);
     } catch (err) {
-      toast.error(err);
+      // CORREÇÃO: antes era toast.error(err), que mostrava "[object Object]"
+      toast.error(getErrorMessage(err));
     }
   };
 
@@ -82,12 +84,15 @@ const PlaceOrderScreen = () => {
                           />
                         </Col>
                         <Col>
-                          <Link to={`/product/${item.product}`}>
+                          {/* CORREÇÃO: item do carrinho tem _id, não "product"
+                              (o link ia para /product/undefined) */}
+                          <Link to={`/product/${item._id}`}>
                             {item.name}
                           </Link>
                         </Col>
                         <Col md={4}>
-                          {item.qty} x R$ {item.price} = R$ {item.qty * item.price}
+                          {item.qty} x {formatPrice(item.price)} ={' '}
+                          {formatPrice(item.qty * item.price)}
                         </Col>
                       </Row>
                     </ListGroup.Item>
@@ -106,29 +111,33 @@ const PlaceOrderScreen = () => {
               <ListGroup.Item>
                 <Row>
                   <Col>Itens:</Col>
-                  <Col>R$ {cart.itemsPrice}</Col>
+                  <Col>{formatPrice(cart.itemsPrice)}</Col>
                 </Row>
               </ListGroup.Item>
               <ListGroup.Item>
                 <Row>
                   <Col>Envio:</Col>
-                  <Col>R$ {cart.shippingPrice}</Col>
+                  <Col>{formatPrice(cart.shippingPrice)}</Col>
                 </Row>
               </ListGroup.Item>
               <ListGroup.Item>
                 <Row>
                   <Col>Total:</Col>
-                  <Col>R$ {cart.totalPrice}</Col>
+                  <Col>{formatPrice(cart.totalPrice)}</Col>
                 </Row>
               </ListGroup.Item>
-              <ListGroup.Item>
-                {error && <Message variant='danger'>{error}</Message>}
-              </ListGroup.Item>
+              {error && (
+                <ListGroup.Item>
+                  {/* CORREÇÃO: {error} era um objeto e quebrava a tela */}
+                  <Message variant='danger'>{getErrorMessage(error)}</Message>
+                </ListGroup.Item>
+              )}
               <ListGroup.Item>
                 <Button
                   type='button'
-                  className='btn-block'
-                  disabled={cart.cartItems === 0}
+                  className='w-100'
+                  /* CORREÇÃO: faltava o .length (o botão nunca desabilitava) */
+                  disabled={cart.cartItems.length === 0 || isLoading}
                   onClick={placeOrderHandler}
                 >
                   Efetuar compra

@@ -54,7 +54,8 @@ table th {
   right: 0;
   background-color: rgba(128, 128, 128, 0.6);
   /* Cinza com 60% de transparência */
-  padding: 10px;
+  padding: 10px 10px 2.5rem;
+  /* espaço extra embaixo para os indicadores do carrossel não cobrirem o texto */
 }
 
 .carousel-caption h2 {

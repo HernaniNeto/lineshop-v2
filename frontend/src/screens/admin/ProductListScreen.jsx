@@ -11,6 +11,7 @@ import {
   useDeleteProductMutation,
 } from '../../slices/productsApiSlice';
 import { toast } from 'react-toastify';
+import { formatPrice, getErrorMessage } from '../../utils/format';
 
 const ProductListScreen = () => {
   const { pageNumber } = useParams()
@@ -28,11 +29,11 @@ const ProductListScreen = () => {
   const deleteHandler = async (id) => {
     if (window.confirm('Tem certeza?')) {
       try {
-        await deleteProduct(id);
-        toast.success('Produto apagado')
+        await deleteProduct(id).unwrap();
+        toast.success('Produto apagado');
         refetch();
       } catch (err) {
-        toast.error(err?.data?.message || err.error);
+        toast.error(getErrorMessage(err));
       }
     }
   };
@@ -40,10 +41,11 @@ const ProductListScreen = () => {
   const createProductHandler = async () => {
     if (window.confirm('Tem certeza de que pretende criar um novo produto?')) {
       try {
-        await createProduct();
+        await createProduct().unwrap();
+        toast.success('Produto criado — clique em editar para preencher');
         refetch();
       } catch (err) {
-        toast.error(err?.data?.message || err.error);
+        toast.error(getErrorMessage(err));
       }
     }
   };
@@ -67,7 +69,7 @@ const ProductListScreen = () => {
       {isLoading ? (
         <Loader />
       ) : error ? (
-        <Message variant='danger'>{error}</Message>
+        <Message variant='danger'>{getErrorMessage(error)}</Message>
       ) : (
         <>
           <Table striped bordered hover responsive className='table-sm'>
@@ -84,10 +86,10 @@ const ProductListScreen = () => {
             <tbody>
               {data.products.map((product) => (
                 <tr key={product._id}>
-                  <td>{product._id}</td>
+                  {/* CORREÇÃO: o ID aparecia duas vezes e desalinhava a tabela */}
                   <td>{product._id}</td>
                   <td>{product.name}</td>
-                  <td>R$ {product.price.toFixed(2)}</td>
+                  <td>{formatPrice(product.price)}</td>
                   <td>{product.category}</td>
                   <td>{product.brand}</td>
                   <td>

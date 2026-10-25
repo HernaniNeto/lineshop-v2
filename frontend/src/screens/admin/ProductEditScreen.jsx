@@ -10,6 +10,7 @@ import {
   useUpdateProductMutation,
   useUploadProductImageMutation,
 } from '../../slices/productsApiSlice';
+import { formatPrice, getErrorMessage } from '../../utils/format';
 
 const ProductEditScreen = () => {
   const { id: productId } = useParams();
@@ -40,21 +41,23 @@ const ProductEditScreen = () => {
   const submitHandler = async (e) => {
     e.preventDefault();
     try {
+      // CORREÇÃO: .unwrap() para que erros do servidor caiam no catch
+      // (antes mostrava "Produto atualizado" mesmo quando falhava)
       await updateProduct({
         productId,
         name,
-        price,
+        price: Number(price),
         image,
         brand,
         category,
         description,
-        countInStock,
-      });
-      toast.success('Produto Atualizado');
+        countInStock: Number(countInStock),
+      }).unwrap();
+      toast.success('Produto atualizado');
       refetch();
       navigate('/admin/productlist');
     } catch (err) {
-      toast.error(err?.data?.message || err.error);
+      toast.error(getErrorMessage(err));
     }
   };
 
@@ -78,7 +81,7 @@ const ProductEditScreen = () => {
       toast.success(res.message);
       setImage(res.image);
     } catch (err) {
-      toast.error(err?.data?.message || err.error);
+      toast.error(getErrorMessage(err));
     }
   };
 
@@ -90,16 +93,19 @@ const ProductEditScreen = () => {
       <FormContainer>
         <h1>Editar produto</h1>
         {loadingUpdate && <Loader />}
+        {image && !isLoading && (
+          <img src={image} alt='Pré-visualização' className='img-fluid rounded my-2' style={{ maxHeight: 160 }} />
+        )}
         {isLoading ? (
           <Loader />
         ) : error ? (
-          <Message variant='danger'>{error}</Message>
+          <Message variant='danger'>{getErrorMessage(error)}</Message>
         ) : (
           <Form onSubmit={submitHandler}>
             <Form.Group controlId='name'>
               <Form.Label>Nome</Form.Label>
               <Form.Control
-                type='name'
+                type='text'
                 placeholder='Nome'
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -115,7 +121,7 @@ const ProductEditScreen = () => {
                 onChange={(e) => setPrice(e.target.value)}
               ></Form.Control>
               <small className='text-muted'>
-                Exemplo: R$ {parseFloat(price).toFixed(2)}
+                Exemplo: {formatPrice(price)}
               </small>
             </Form.Group>
 
@@ -123,14 +129,15 @@ const ProductEditScreen = () => {
               <Form.Label>Imagem</Form.Label>
               <Form.Control
                 type='text'
-                placeholder='imagem url'
+                placeholder='URL da imagem'
                 value={image}
-                onChange={(e) => setImage}
+                /* CORREÇÃO: antes era onChange={(e) => setImage}, que não fazia nada */
+                onChange={(e) => setImage(e.target.value)}
               ></Form.Control>
               <Form.Control
-                label='Choose File'
                 onChange={uploadFileHandler}
                 type='file'
+                accept='image/png, image/jpeg, image/webp'
               ></Form.Control>
               {loadingUpload && <Loader />}
             </Form.Group>
@@ -149,7 +156,7 @@ const ProductEditScreen = () => {
               <Form.Label>Estoque</Form.Label>
               <Form.Control
                 type='number'
-                placeholder='Enter countInStock'
+                placeholder='Quantidade em estoque'
                 value={countInStock}
                 onChange={(e) => setCountInStock(e.target.value)}
               ></Form.Control>
@@ -168,7 +175,8 @@ const ProductEditScreen = () => {
             <Form.Group controlId='description'>
               <Form.Label>Descrição</Form.Label>
               <Form.Control
-                type='text'
+                as='textarea'
+                rows={3}
                 placeholder='Descrição'
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}

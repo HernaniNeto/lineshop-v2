@@ -3,6 +3,7 @@ import { Carousel, Image } from 'react-bootstrap';
 import Loader from './Loader'
 import Message from './Message';
 import { useGetTopProductsQuery } from '../slices/productsApiSlice';
+import { formatPrice } from '../utils/format';
 
 const ProductCarousel = () => {
   const { data: products, isLoading, error } = useGetTopProductsQuery();
@@ -16,8 +17,8 @@ const ProductCarousel = () => {
           <Link to={`/product/${product._id}`}>
             <Image src={product.image} alt={product.name} fluid />
             <Carousel.Caption className='carousel-caption'>
-              <h2 className='text-danger text-right'>
-                {product.name} (R$ {parseFloat(product.price).toFixed(2)})
+              <h2 className='text-white text-end'>
+                {product.name} ({formatPrice(product.price)})
               </h2>
 
             </Carousel.Caption>

@@ -5,22 +5,33 @@ import Product from '../models/productModel.js'
 // @route   GET /api/products
 // @access  Public
 const getProducts = asyncHandler(async (req, res) => {
-  const pageSize = process.env.PAGINATION_LIMIT;
+  // CORREÇÃO: o valor do .env chega como texto ("8"); sem Number() e sem um
+  // valor padrão, a paginação quebrava (NaN) se a variável não existisse.
+  const pageSize = Number(process.env.PAGINATION_LIMIT) || 8
   const page = Number(req.query.pageNumber) || 1
 
-  const keyword = req.query.keyword 
-  ? { name: { $regex: req.query.keyword, $options: 'i' } } 
-  : {}
+  // CORREÇÃO: escapa caracteres especiais da busca. Antes, procurar algo
+  // como "(" ou "*" derrubava a requisição com erro de expressão regular.
+  const keyword = req.query.keyword
+    ? {
+        name: {
+          $regex: String(req.query.keyword).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+          $options: 'i'
+        }
+      }
+    : {}
 
   const count = await Product.countDocuments({ ...keyword })
 
   const products = await Product.find({ ...keyword })
-  .limit(pageSize)
-  .skip(pageSize * (page-1))
+    .sort({ createdAt: -1 })
+    .limit(pageSize)
+    .skip(pageSize * (page - 1))
+
   res.json({ products, page, pages: Math.ceil(count / pageSize) })
 })
 
-//  desc    Fetch single product
+// @desc    Fetch single product
 // @route   GET /api/products/:id
 // @access  Public
 const getProductById = asyncHandler(async (req, res) => {
@@ -65,33 +76,33 @@ const updateProduct = asyncHandler(async (req, res) => {
 
   if (product) {
     product.name = name;
-    product.price = price;
+    product.price = Number(price);
     product.description = description;
     product.image = image;
     product.brand = brand;
     product.category = category;
-    product.countInStock = countInStock;
+    product.countInStock = Number(countInStock);
 
     const updatedProduct = await product.save();
-    res.status(201).json(updatedProduct);
+    res.status(200).json(updatedProduct);
   } else {
     res.status(404);
     throw new Error('Produto não encontrado');
   }
 });
 
-/// @desc    Delete a product
+// @desc    Delete a product
 // @route   DELETE /api/products/:id
 // @access  Private/Admin
 const deleteProduct = asyncHandler(async (req, res) => {
   const product = await Product.findById(req.params.id);
 
   if (product) {
-   await product.deleteOne({_id: product._id})
-   res.status(200).json({ message: 'Product deleted' })
+    await Product.deleteOne({ _id: product._id });
+    res.status(200).json({ message: 'Produto apagado' });
   } else {
     res.status(404);
-    throw new Error('Resource not found');
+    throw new Error('Produto não encontrado');
   }
 });
 // @desc    Create new review
@@ -109,7 +120,7 @@ const createProductReview = asyncHandler(async (req, res) => {
 
     if (alreadyReviewed) {
       res.status(400);
-      throw new Error('Product already reviewed');
+      throw new Error('Você já avaliou este produto');
     }
 
     const review = {
@@ -128,13 +139,12 @@ const createProductReview = asyncHandler(async (req, res) => {
       product.reviews.length;
 
     await product.save();
-    res.status(201).json({ message: 'Review added' });
+    res.status(201).json({ message: 'Avaliação adicionada' });
   } else {
     res.status(404);
-    throw new Error('Product not found');
+    throw new Error('Produto não encontrado');
   }
 });
-
 
 // @desc    Get top rated products
 // @route   GET /api/products/top

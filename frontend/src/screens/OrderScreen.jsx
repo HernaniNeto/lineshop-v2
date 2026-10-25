@@ -12,6 +12,11 @@ import {
   useGetPaypalClientIdQuery,
   usePayOrderMutation,
 } from '../slices/ordersApiSlice';
+import {
+  formatPrice,
+  formatDateTime,
+  getErrorMessage,
+} from '../utils/format';
 
 const OrderScreen = () => {
   const { id: orderId } = useParams();
@@ -39,7 +44,9 @@ const OrderScreen = () => {
   } = useGetPaypalClientIdQuery();
 
   useEffect(() => {
-    if (!errorPayPal && !loadingPayPal && paypal.clientId) {
+    // CORREÇÃO: "paypal?.clientId" — antes, se a resposta viesse vazia,
+    // a tela inteira quebrava ao ler "paypal.clientId".
+    if (!errorPayPal && !loadingPayPal && paypal?.clientId) {
       const loadPaypalScript = async () => {
         paypalDispatch({
           type: 'resetOptions',
@@ -61,17 +68,19 @@ const OrderScreen = () => {
   function onApprove(data, actions) {
     return actions.order.capture().then(async function (details) {
       try {
-        await payOrder({ orderId, details });
+        // CORREÇÃO: sem o .unwrap() os erros do servidor eram ignorados e
+        // aparecia "Pagamento realizado" mesmo quando falhava.
+        await payOrder({ orderId, details }).unwrap();
         refetch();
         toast.success('Pagamento realizado com sucesso');
       } catch (err) {
-        toast.error(err?.data?.message || err.message);
+        toast.error(getErrorMessage(err));
       }
     });
   }
 
   function onError(err) {
-    toast.error(err.message);
+    toast.error(getErrorMessage(err));
   }
 
   function createOrder(data, actions) {
@@ -79,7 +88,7 @@ const OrderScreen = () => {
       .create({
         purchase_units: [
           {
-            amount: { value: order.totalPrice },
+            amount: { value: order.totalPrice.toFixed(2), currency_code: 'BRL' },
           },
         ],
       })
@@ -90,28 +99,30 @@ const OrderScreen = () => {
 
   const deliverOrderHandler = async () => {
     try {
-      await deliverOrder(orderId);
+      await deliverOrder(orderId).unwrap();
       refetch();
-      toast.success('Produto entregue')
+      toast.success('Pedido marcado como entregue');
     } catch (err) {
-      toast.error(err?.data?.message || err.message);
+      toast.error(getErrorMessage(err));
     }
   };
 
   return isLoading ? (
     <Loader />
   ) : error ? (
-    <Message variant='danger'>{error}</Message>
+    // CORREÇÃO: antes era {error} — um objeto — o que fazia o React quebrar
+    // a página inteira ("Objects are not valid as a React child").
+    <Message variant='danger'>{getErrorMessage(error)}</Message>
   ) : (
     <>
-      <h1>Ordem {order._id}</h1>
+      <h1>Pedido {order._id}</h1>
       <Row>
         <Col md={8}>
           <ListGroup variant='flush'>
             <ListGroup.Item>
               <h2>Envio</h2>
               <p>
-                <strong>Nome:  </strong>  {order.user.name}
+                <strong>Nome: </strong> {order.user.name}
               </p>
               <p>
                 <strong>Email: </strong>{' '}
@@ -125,10 +136,10 @@ const OrderScreen = () => {
               </p>
               {order.isDelivered ? (
                 <Message variant='success'>
-                  Entregue {order.deliveredAt}
+                  Entregue em {formatDateTime(order.deliveredAt)}
                 </Message>
               ) : (
-                <Message variant='danger'>Não foi entregue</Message>
+                <Message variant='danger'>Ainda não entregue</Message>
               )}
             </ListGroup.Item>
 
@@ -139,16 +150,18 @@ const OrderScreen = () => {
                 {order.paymentMethod}
               </p>
               {order.isPaid ? (
-                <Message variant='success'>Pago {order.paidAt}</Message>
+                <Message variant='success'>
+                  Pago em {formatDateTime(order.paidAt)}
+                </Message>
               ) : (
                 <Message variant='danger'>Pagamento não efetuado</Message>
               )}
             </ListGroup.Item>
 
             <ListGroup.Item>
-              <h2>Ordem dos itens</h2>
+              <h2>Itens do pedido</h2>
               {order.orderItems.length === 0 ? (
-                <Message>A ordem está vazia</Message>
+                <Message>O pedido está vazio</Message>
               ) : (
                 <ListGroup variant='flush'>
                   {order.orderItems.map((item, index) => (
@@ -168,7 +181,10 @@ const OrderScreen = () => {
                           </Link>
                         </Col>
                         <Col md={4}>
-                          {item.qty} x R$ {item.price} = R$ {item.qty * item.price.toFixed(2)}
+                          {/* CORREÇÃO: antes era item.qty * item.price.toFixed(2),
+                              que formatava só o preço e não o resultado */}
+                          {item.qty} x {formatPrice(item.price)} ={' '}
+                          {formatPrice(item.qty * item.price)}
                         </Col>
                       </Row>
                     </ListGroup.Item>
@@ -182,26 +198,24 @@ const OrderScreen = () => {
           <Card>
             <ListGroup variant='flush'>
               <ListGroup.Item>
-                <h2>Resumo da ordem</h2>
+                <h2>Resumo do pedido</h2>
               </ListGroup.Item>
               <ListGroup.Item>
                 <Row>
                   <Col>Itens</Col>
-                  <Col>R$ {order.itemsPrice.toFixed(2)}</Col>
+                  <Col>{formatPrice(order.itemsPrice)}</Col>
                 </Row>
               </ListGroup.Item>
               <ListGroup.Item>
                 <Row>
                   <Col>Envio</Col>
-                  <Col>R$ {order.shippingPrice.toFixed(2)}</Col>
+                  <Col>{formatPrice(order.shippingPrice)}</Col>
                 </Row>
-              </ListGroup.Item>
-              <ListGroup.Item>
               </ListGroup.Item>
               <ListGroup.Item>
                 <Row>
                   <Col>Total</Col>
-                  <Col>R$ {order.totalPrice.toFixed(2)}</Col>
+                  <Col>{formatPrice(order.totalPrice)}</Col>
                 </Row>
               </ListGroup.Item>
 
@@ -209,19 +223,19 @@ const OrderScreen = () => {
                 <ListGroup.Item>
                   {loadingPay && <Loader />}
 
-                  {isPending ? (
+                  {errorPayPal ? (
+                    <Message variant='danger'>
+                      Não foi possível carregar o PayPal
+                    </Message>
+                  ) : isPending ? (
                     <Loader />
                   ) : (
                     <div>
-
-
-                      <div>
-                        <PayPalButtons
-                          createOrder={createOrder}
-                          onApprove={onApprove}
-                          onError={onError}
-                        ></PayPalButtons>
-                      </div>
+                      <PayPalButtons
+                        createOrder={createOrder}
+                        onApprove={onApprove}
+                        onError={onError}
+                      ></PayPalButtons>
                     </div>
                   )}
                 </ListGroup.Item>
@@ -236,7 +250,7 @@ const OrderScreen = () => {
                   <ListGroup.Item>
                     <Button
                       type='button'
-                      className='btn btn-block'
+                      className='w-100'
                       onClick={deliverOrderHandler}
                     >
                       Marcar como entregue

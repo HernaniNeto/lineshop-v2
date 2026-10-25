@@ -29,9 +29,9 @@ const PaymentScreen = () => {
 
   return (
     <FormContainer>
-      <Link className="btn btn-dark my-3" to="/shipping">
-    Voltar
-    </Link>
+      <Link className='btn btn-dark my-3' to='/shipping'>
+        Voltar
+      </Link>
       <CheckoutSteps step1 step2 step3 />
       <h1>Método de pagamento</h1>
       <Form onSubmit={submitHandler}>
@@ -45,14 +45,14 @@ const PaymentScreen = () => {
               id='PayPal'
               name='paymentMethod'
               value='PayPal'
-              checked
+              checked={paymentMethod === 'PayPal'}
               onChange={(e) => setPaymentMethod(e.target.value)}
             ></Form.Check>
           </Col>
         </Form.Group>
 
         <Button type='submit' variant='primary'>
-          Continue
+          Continuar
         </Button>
       </Form>
     </FormContainer>

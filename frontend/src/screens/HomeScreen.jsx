@@ -30,7 +30,10 @@ const HomeScreen = () => {
       ) : (
         <>
           <Meta />
-          <h1>Produtos mais recentes</h1>
+          <h1>{keyword ? `Resultados para "${keyword}"` : 'Produtos mais recentes'}</h1>
+          {data.products.length === 0 && (
+            <Message>Nenhum produto encontrado</Message>
+          )}
           <Row>
             {data.products.map((product) => (
               <Col key={product._id} sm={12} md={6} lg={4} xl={3}>

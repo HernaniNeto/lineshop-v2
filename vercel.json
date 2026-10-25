@@ -1,0 +1,16 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "npm install && npm install --prefix frontend",
+  "buildCommand": "npm run build --prefix frontend && node scripts/copy-uploads.js",
+  "outputDirectory": "frontend/build",
+  "functions": {
+    "api/index.js": {
+      "maxDuration": 10
+    }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

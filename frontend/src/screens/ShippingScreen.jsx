@@ -29,9 +29,9 @@ const ShippingScreen = () => {
 
   return (
     <FormContainer>
-      <Link className="btn btn-dark my-3" to="/cart">
-    Voltar
-    </Link>
+      <Link className='btn btn-dark my-3' to='/cart'>
+        Voltar
+      </Link>
       <CheckoutSteps step1 step2 />
       <h1>Envio</h1>
       <Form onSubmit={submitHandler}>
@@ -59,23 +59,20 @@ const ShippingScreen = () => {
 
         <Form.Group className='my-2' controlId='postalCode'>
           <Form.Label>CEP</Form.Label>
-          <Form.Group className='my-2' controlId='postalCode'>
-          <Form.Label>CEP</Form.Label>
           <Form.Control
             type='text'
-            placeholder='Enter postal code'
+            placeholder='CEP'
             value={postalCode}
             required
             onChange={(e) => setPostalCode(e.target.value)}
           ></Form.Control>
         </Form.Group>
-        </Form.Group>
 
         <Form.Group className='my-2' controlId='country'>
-          <Form.Label>Cidade</Form.Label>
+          <Form.Label>País</Form.Label>
           <Form.Control
             type='text'
-            placeholder='Cidade'
+            placeholder='País'
             value={country}
             required
             onChange={(e) => setCountry(e.target.value)}
@@ -83,7 +80,7 @@ const ShippingScreen = () => {
         </Form.Group>
 
         <Button type='submit' variant='primary'>
-          Continue
+          Continuar
         </Button>
       </Form>
     </FormContainer>

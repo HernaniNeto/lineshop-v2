@@ -36,7 +36,7 @@ const RegisterScreen = () => {
     e.preventDefault();
 
     if (password !== confirmPassword) {
-      toast.error('Passwords do not match');
+      toast.error('As senhas não coincidem');
     } else {
       try {
         const res = await register({ name, email, password }).unwrap();
@@ -51,15 +51,15 @@ const RegisterScreen = () => {
   return (
     
     <FormContainer>
-        <Link className="btn btn-dark my-3" to="/login">
-    Voltar
-    </Link>
+      <Link className='btn btn-dark my-3' to='/login'>
+        Voltar
+      </Link>
       <h1>Inscreva-se</h1>
       <Form onSubmit={submitHandler}>
         <Form.Group className='my-2' controlId='name'>
           <Form.Label>Nome</Form.Label>
           <Form.Control
-            type='name'
+            type='text'
             placeholder='Nome'
             value={name}
             onChange={(e) => setName(e.target.value)}

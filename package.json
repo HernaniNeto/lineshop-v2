@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Aplicação de eCommerce construída com a pilha MERN",
   "type": "module",
-  "main": "server.js",
+  "main": "backend/server.js",
   "scripts": {
     "start": "node backend/server.js",
     "server": "nodemon backend/server.js",
@@ -19,6 +19,7 @@
     "bcryptjs": "^2.4.3",
     "colors": "^1.4.0",
     "cookie-parser": "^1.4.6",
+    "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.1",
     "mongoose": "^7.3.4",
@@ -26,7 +27,9 @@
   },
   "devDependencies": {
     "concurrently": "^8.2.0",
-    "dotenv": "^16.3.1",
     "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }

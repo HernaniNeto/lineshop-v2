@@ -1,41 +1,69 @@
-import path from 'path';
-import express from 'express';
-import multer from 'multer';
+import path from 'path'
+import express from 'express'
+import multer from 'multer'
+import { protect, admin } from '../middleware/authMiddleware.js'
+import Image from '../models/imageModel.js'
 
-const router = express.Router();
+const router = express.Router()
 
-const storage = multer.diskStorage({
-  destination(req, file, cb) {
-    cb(null, 'uploads/');
-  },
-  filename(req, file, cb) {
-    cb(null, `${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`
-    );
-  },
-});
+// O arquivo fica na memória e depois é salvo no MongoDB (veja models/imageModel.js).
+// Limite de 4 MB: a Vercel recusa requisições maiores que 4,5 MB.
+const MAX_SIZE = 4 * 1024 * 1024
 
-function checkFileType(file, cb) {
-  const filetypes = /jpg|jpeg|png/;
-  const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
- 
-  const mimetype = mimetype.test(file.mimetype);
+// Aceita apenas imagens JPG/JPEG/PNG/WEBP
+function fileFilter(req, file, cb) {
+  const filetypes = /jpe?g|png|webp/
+  const mimetypes = /image\/jpe?g|image\/png|image\/webp/
+
+  const extname = filetypes.test(path.extname(file.originalname).toLowerCase())
+  const mimetype = mimetypes.test(file.mimetype)
+
   if (extname && mimetype) {
-    cb(null, true);
+    cb(null, true)
   } else {
-    cb('Apenas imagens!');
+    cb(new Error('Apenas imagens (jpg, jpeg, png ou webp)!'), false)
   }
 }
 
-const upload = multer({ 
-  storage,
-});
+const upload = multer({
+  storage: multer.memoryStorage(),
+  fileFilter,
+  limits: { fileSize: MAX_SIZE }
+})
+const uploadSingleImage = upload.single('image')
 
-router.post('/', upload.single('image'), (req, res) => {
-  res.send({
-    message: 'Imagem carregada com sucesso!',
-    image: `/${req.file.path}`,
+// Só administradores podem enviar imagens
+router.post('/', protect, admin, (req, res, next) => {
+  uploadSingleImage(req, res, async function (err) {
+    if (err) {
+      const message =
+        err.code === 'LIMIT_FILE_SIZE'
+          ? 'Imagem muito grande (máximo 4 MB)'
+          : err.message
+      return res.status(400).send({ message })
+    }
+
+    if (!req.file) {
+      return res.status(400).send({ message: 'Nenhum arquivo enviado' })
+    }
+
+    try {
+      const image = await Image.create({
+        filename: req.file.originalname,
+        contentType: req.file.mimetype,
+        data: req.file.buffer,
+        size: req.file.size,
+        user: req.user._id
+      })
+
+      res.status(200).send({
+        message: 'Imagem carregada com sucesso!',
+        image: `/api/images/${image._id}`
+      })
+    } catch (error) {
+      next(error)
+    }
   })
 })
-     
 
-export default router;
+export default router

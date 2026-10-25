@@ -21,7 +21,7 @@ const authUser = asyncHandler(async (req, res) => {
     })
   } else {
     res.status(401)
-    throw new Error('Invalid email or password')
+    throw new Error('Email ou senha inválidos')
   }
 })
 
@@ -35,7 +35,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
   if (userExists) {
     res.status(400)
-    throw new Error('User already exists')
+    throw new Error('Este email já está cadastrado')
   }
 
   const user = await User.create({
@@ -55,7 +55,7 @@ const registerUser = asyncHandler(async (req, res) => {
     })
   } else {
     res.status(400)
-    throw new Error('Invalid user data')
+    throw new Error('Dados de usuário inválidos')
   }
 })
 
@@ -67,7 +67,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     httpOnly: true,
     expires: new Date(0)
   })
-  res.status(200).json({ message: 'Logged out successfully' })
+  res.status(200).json({ message: 'Logout realizado com sucesso' })
 })
 
 // @desc    Get user profile
@@ -85,7 +85,7 @@ const getUserProfile = asyncHandler(async (req, res) => {
     })
   } else {
     res.status(404)
-    throw new Error('User not found')
+    throw new Error('Usuário não encontrado')
   }
 })
 
@@ -113,7 +113,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     })
   } else {
     res.status(404)
-    throw new Error('User not found')
+    throw new Error('Usuário não encontrado')
   }
 })
 
@@ -136,7 +136,7 @@ const getUserById = asyncHandler(async (req, res) => {
     res.status(200).json(user)
   } else {
     res.status(404)
-    throw new Error('User not found')
+    throw new Error('Usuário não encontrado')
   }
 })
 
@@ -150,12 +150,14 @@ const deleteUser = asyncHandler(async (req, res) => {
   if (user) {
     if (user.isAdmin) {
       res.status(400)
-      throw new Error('Cannot delete admin user')
+      throw new Error('Não é possível apagar um administrador')
     }
     await User.deleteOne({_id: user._id})
-    res.status(200).json({ message: 'User deleted successfully' })
+    res.status(200).json({ message: 'Usuário apagado com sucesso' })
   } else {
-    throw new Error('user not found')
+    // CORREÇÃO: faltava o status 404 (respondia 500)
+    res.status(404)
+    throw new Error('Usuário não encontrado')
   }
 })
 
@@ -168,7 +170,10 @@ const updateUser = asyncHandler(async (req, res) => {
   if (user) {
     user.name = req.body.name || user.name
     user.email = req.body.email || user.email
-    user.isAdmin = Boolean(req.body.isAdmin)
+    // Mantém o valor atual se o campo não for enviado
+    if (req.body.isAdmin !== undefined) {
+      user.isAdmin = Boolean(req.body.isAdmin)
+    }
 
     const updatedUser = await user.save()
 
@@ -180,7 +185,7 @@ const updateUser = asyncHandler(async (req, res) => {
     })
   } else {
     res.status(404)
-    throw new Error('User not found')
+    throw new Error('Usuário não encontrado')
   }
 })
 

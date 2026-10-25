@@ -14,16 +14,22 @@ const protect = asyncHandler(async (req, res, next) => {
       const decoded = jwt.verify(token, process.env.JWT_SECRET)
 
       req.user = await User.findById(decoded.userId).select('-password')
-
-      next()
     } catch (error) {
       console.error(error)
       res.status(401)
-      throw new Error('Not authorized, token failed')
+      throw new Error('Não autorizado, token inválido')
     }
+
+    // Usuário foi apagado mas o cookie ainda existe
+    if (!req.user) {
+      res.status(401)
+      throw new Error('Não autorizado, usuário não encontrado')
+    }
+
+    next()
   } else {
     res.status(401)
-    throw new Error('Not authorized, no token')
+    throw new Error('Não autorizado, faça login')
   }
 })
 
@@ -33,7 +39,7 @@ const admin = (req, res, next) => {
     next()
   } else {
     res.status(401)
-    throw new Error('Not authorized as an admin')
+    throw new Error('Não autorizado: apenas administradores')
   }
 }
 

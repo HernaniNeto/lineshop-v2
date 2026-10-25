@@ -10,6 +10,7 @@ import Loader from '../components/Loader';
 import { useProfileMutation } from '../slices/usersApiSlice';
 import { useGetMyOrdersQuery } from '../slices/ordersApiSlice';
 import { setCredentials } from '../slices/authSlice';
+import { formatPrice, formatDate, getErrorMessage } from '../utils/format';
 
 const ProfileScreen = () => {
   const [name, setName] = useState('');
@@ -24,17 +25,20 @@ const ProfileScreen = () => {
   const [updateProfile, { isLoading: loadingUpdateProfile }] =
     useProfileMutation();
 
+  // CORREÇÃO: faltavam as chaves { } no if — o setEmail rodava fora dele
+  // e quebrava a tela quando userInfo era nulo (ex.: logo após sair).
   useEffect(() => {
-    if (userInfo)
+    if (userInfo) {
       setName(userInfo.name);
-    setEmail(userInfo.email);
-  }, [userInfo, userInfo.email, userInfo.name]);
+      setEmail(userInfo.email);
+    }
+  }, [userInfo]);
 
   const dispatch = useDispatch();
   const submitHandler = async (e) => {
     e.preventDefault();
     if (password !== confirmPassword) {
-      toast.error('Passwords do not match');
+      toast.error('As senhas não coincidem');
     } else {
       try {
         const res = await updateProfile({
@@ -44,9 +48,11 @@ const ProfileScreen = () => {
           password,
         }).unwrap();
         dispatch(setCredentials({ ...res }));
-        toast.success('Profile updated successfully');
+        setPassword('');
+        setConfirmPassword('');
+        toast.success('Perfil atualizado com sucesso');
       } catch (err) {
-        toast.error(err?.data?.message || err.error);
+        toast.error(getErrorMessage(err));
       }
     }
   };
@@ -60,7 +66,7 @@ const ProfileScreen = () => {
           <Form.Group className='my-2' controlId='name'>
             <Form.Label>Nome</Form.Label>
             <Form.Control
-              type='name'
+              type='text'
               placeholder='Nome'
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -68,20 +74,20 @@ const ProfileScreen = () => {
           </Form.Group>
 
           <Form.Group className='my-2' controlId='email'>
-            <Form.Label>Endereço</Form.Label>
+            <Form.Label>Email</Form.Label>
             <Form.Control
               type='email'
-              placeholder='Endereço'
+              placeholder='Email'
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             ></Form.Control>
           </Form.Group>
 
           <Form.Group className='my-2' controlId='password'>
-            <Form.Label>Senha</Form.Label>
+            <Form.Label>Nova senha</Form.Label>
             <Form.Control
               type='password'
-              placeholder='Senha'
+              placeholder='Deixe em branco para manter a atual'
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             ></Form.Control>
@@ -104,13 +110,13 @@ const ProfileScreen = () => {
         </Form>
       </Col>
       <Col md={9}>
-        <h2>Minhas Ordens</h2>
+        <h2>Meus pedidos</h2>
         {isLoading ? (
           <Loader />
         ) : error ? (
-          <Message variant='danger'>
-            {error?.data?.message || error.error}
-          </Message>
+          <Message variant='danger'>{getErrorMessage(error)}</Message>
+        ) : orders.length === 0 ? (
+          <Message>Você ainda não fez nenhum pedido</Message>
         ) : (
           <Table striped hover responsive className='table-sm'>
             <thead>
@@ -127,18 +133,18 @@ const ProfileScreen = () => {
               {orders.map((order) => (
                 <tr key={order._id}>
                   <td>{order._id}</td>
-                  <td>{order.createdAt.substring(0, 10)}</td>
-                  <td>{order.totalPrice}</td>
+                  <td>{formatDate(order.createdAt)}</td>
+                  <td>{formatPrice(order.totalPrice)}</td>
                   <td>
                     {order.isPaid ? (
-                      order.paidAt.substring(0, 10)
+                      formatDate(order.paidAt)
                     ) : (
                       <FaTimes style={{ color: 'red' }} />
                     )}
                   </td>
                   <td>
                     {order.isDelivered ? (
-                      order.deliveredAt.substring(0, 10)
+                      formatDate(order.deliveredAt)
                     ) : (
                       <FaTimes style={{ color: 'red' }} />
                     )}
