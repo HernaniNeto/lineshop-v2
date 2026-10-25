@@ -61,3 +61,11 @@ table th {
 .carousel-caption h2 {
   margin: 0;
 }
+/* Carrossel com altura fixa: as fotos ficam inteiras e centralizadas */
+.carousel-item img {
+  height: 380px;
+  width: 100%;
+  object-fit: contain;
+  background-color: #fff;
+  padding: 20px 0 70px;
+}
