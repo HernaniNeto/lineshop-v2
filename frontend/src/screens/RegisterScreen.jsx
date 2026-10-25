@@ -61,6 +61,7 @@ const RegisterScreen = () => {
           <Form.Control
             type='text'
             placeholder='Nome'
+            required
             value={name}
             onChange={(e) => setName(e.target.value)}
           ></Form.Control>
@@ -71,6 +72,7 @@ const RegisterScreen = () => {
           <Form.Control
             type='email'
             placeholder='Email'
+            required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           ></Form.Control>
@@ -80,7 +82,9 @@ const RegisterScreen = () => {
           <Form.Label>Senha</Form.Label>
           <Form.Control
             type='password'
-            placeholder='Senha'
+            placeholder='Mínimo de 6 caracteres'
+            required
+            minLength={6}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           ></Form.Control>
@@ -89,7 +93,9 @@ const RegisterScreen = () => {
           <Form.Label>Confirmar senha</Form.Label>
           <Form.Control
             type='password'
-            placeholder='Confirmar Senha'
+            placeholder='Repita a senha'
+            required
+            minLength={6}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
           ></Form.Control>

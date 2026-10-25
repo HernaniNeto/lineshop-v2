@@ -2,13 +2,25 @@ import asyncHandler from '../middleware/asyncHandler.js'
 import User from '../models/userModel.js'
 import generateToken from '../utils/generateToken.js'
 
+// Busca por email sem diferenciar maiúsculas/minúsculas
+const escapeRegex = text => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+const findByEmail = email =>
+  User.findOne({
+    email: { $regex: `^${escapeRegex(String(email || '').trim())}$`, $options: 'i' }
+  })
+
 // @desc    Auth user & get token
 // @route   POST /api/users/auth
 // @access  Public
 const authUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body
 
-  const user = await User.findOne({ email })
+  if (!email || !password) {
+    res.status(400)
+    throw new Error('Informe email e senha')
+  }
+
+  const user = await findByEmail(email)
 
   if (user && (await user.matchPassword(password))) {
     generateToken(res, user._id)
@@ -29,9 +41,26 @@ const authUser = asyncHandler(async (req, res) => {
 // @route   POST /api/users
 // @access  Public
 const registerUser = asyncHandler(async (req, res) => {
-  const { name, email, password } = req.body
+  const name = String(req.body.name || '').trim()
+  const email = String(req.body.email || '').trim().toLowerCase()
+  const password = String(req.body.password || '')
 
-  const userExists = await User.findOne({ email })
+  // CORREÇÃO: antes, campos vazios geravam um erro técnico em inglês
+  // ("User validation failed...") com status 500
+  if (!name || !email || !password) {
+    res.status(400)
+    throw new Error('Preencha nome, email e senha')
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    res.status(400)
+    throw new Error('Email inválido')
+  }
+  if (password.length < 6) {
+    res.status(400)
+    throw new Error('A senha precisa ter pelo menos 6 caracteres')
+  }
+
+  const userExists = await findByEmail(email)
 
   if (userExists) {
     res.status(400)

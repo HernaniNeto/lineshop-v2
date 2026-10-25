@@ -15,6 +15,18 @@ const errorHandler = (err, req, res, next) => {
     message = 'Recurso não encontrado'
   }
 
+  // Dados inválidos (campo obrigatório faltando etc.)
+  if (err.name === 'ValidationError') {
+    statusCode = 400
+    message = 'Dados inválidos: verifique os campos preenchidos'
+  }
+
+  // Email (ou outro campo único) repetido
+  if (err.code === 11000) {
+    statusCode = 400
+    message = 'Este email já está cadastrado'
+  }
+
   res.status(statusCode).json({
     message: message,
     stack: process.env.NODE_ENV === 'production' ? null : err.stack
